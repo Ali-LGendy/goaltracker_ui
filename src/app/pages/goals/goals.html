@@ -1,1 +1,97 @@
-<p>goals works!</p>
+<h2 class="page-title">Goals</h2>
+
+<form class="goal-form card" [formGroup]="goalForm" (ngSubmit)="createGoal()">
+  <div class="row">
+    <input class="input" formControlName="title" placeholder="Goal title" required />
+    <input class="input" formControlName="description" placeholder="Description (optional)" />
+    <select class="input" formControlName="parentId" title="Parent goal">
+      <option [ngValue]="null">No Parent (Top level)</option>
+      @for (g of getAllGoalsFlat(goals); track g.id) {
+        <option [ngValue]="g.id">{{ g.title }}</option>
+      }
+    </select>
+  </div>
+  <div class="row right">
+    <button class="btn primary" type="submit" [disabled]="creating">+ Add Goal</button>
+  </div>
+</form>
+
+@if (loading) {
+  <div class="loading">Loading goals…</div>
+} @else {
+  <ol class="tree">
+    @for (goal of goals; track goal.id) {
+      <li class="node">
+        @if (editingGoalId !== goal.id) {
+          <div class="node-header">
+            <div class="node-title">
+              <span class="dot"></span>
+              <strong>{{ goal.title }}</strong>
+              @if (goal.description) { <span class="muted">— {{ goal.description }}</span> }
+            </div>
+            <div class="actions">
+              <button class="btn" (click)="startEdit(goal)">✏ Edit</button>
+              <button class="btn danger" (click)="deleteGoal(goal.id)">🗑 Delete</button>
+            </div>
+          </div>
+        } @else {
+          <form class="edit card" [formGroup]="editForm" (ngSubmit)="saveEdit(goal.id)">
+            <input class="input" formControlName="title" placeholder="Title" />
+            <input class="input" formControlName="description" placeholder="Description" />
+            <div class="row right gap">
+              <button class="btn primary" type="submit">💾 Save</button>
+              <button class="btn" type="button" (click)="cancelEdit()">Cancel</button>
+            </div>
+          </form>
+        }
+
+        @if (goal.children?.length) {
+          <ol>
+            @for (child of goal.children; track child.id) {
+              <li class="node">
+                <!-- recursion renders unlimited levels -->
+                <ng-container *ngTemplateOutlet="nodeTpl; context: {$implicit: child}"></ng-container>
+              </li>
+            }
+          </ol>
+        }
+      </li>
+    }
+  </ol>
+
+  <!-- Recursive node template -->
+  <ng-template #nodeTpl let-item>
+    @if (editingGoalId !== item.id) {
+      <div class="node-header">
+        <div class="node-title">
+          <span class="dot"></span>
+          <strong>{{ item.title }}</strong>
+          @if (item.description) { <span class="muted">— {{ item.description }}</span> }
+        </div>
+        <div class="actions">
+          <button class="btn" (click)="startEdit(item)">✏ Edit</button>
+          <button class="btn danger" (click)="deleteGoal(item.id)">🗑 Delete</button>
+        </div>
+      </div>
+    } @else {
+      <form class="edit card" [formGroup]="editForm" (ngSubmit)="saveEdit(item.id)">
+        <input class="input" formControlName="title" placeholder="Title" />
+        <input class="input" formControlName="description" placeholder="Description" />
+        <div class="row right gap">
+          <button class="btn primary" type="submit">💾 Save</button>
+          <button class="btn" type="button" (click)="cancelEdit()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (item.children?.length) {
+      <ol>
+        @for (c of item.children; track c.id) {
+          <li class="node">
+            <ng-container *ngTemplateOutlet="nodeTpl; context: {$implicit: c}"></ng-container>
+          </li>
+        }
+      </ol>
+    }
+  </ng-template>
+}

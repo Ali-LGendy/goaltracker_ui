@@ -6,6 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [ReactiveFormsModule, RouterModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
@@ -20,12 +21,14 @@ export class Login {
   }
 
   onSubmit() {
-    if(this.loginForm.invalid) return;
+  if(this.loginForm.invalid) return;
 
     this.auth.login(this.loginForm.getRawValue()).subscribe({
       next: (res) => {
         localStorage.setItem('token', res.access_token);
-        this.router.navigate(['/goals']);
+        Promise.resolve().then(() => {
+          this.router.navigate(['/goals']);
+        });
       },
       error: err => alert(err.error.message || 'Login failed'),
     })
