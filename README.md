@@ -1,59 +1,95 @@
-# GoaltrackerUi
+# Goal Tracker UI - Angular Project
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.1.5.
+The **Goal Tracker UI** is the frontend interface for the Goal Tracker application, built with Angular 20 and designed to provide a responsive, user-friendly way for users to create, manage, and track their goals.
 
-## Development server
+---
 
-To start a local development server, run:
+## 📦 Tech Stack Summary
+
+* **Framework**: Angular 20 — Modern, component-based architecture.
+* **Language**: TypeScript — Strong typing and maintainable code.
+* **Styling**: Vanilla CSS — Lightweight, no extra CSS framework dependencies.
+* **State Management**: Angular Signals (and built-in RxJS when needed).
+* **HTTP Client**: Angular `HttpClient` — API communication with backend.
+* **Routing**: Angular Router — Client-side navigation and route guards.
+
+---
+
+## ⚙️ Setup Instructions
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/yourusername/goal-tracker-ui.git
+cd goal-tracker-ui
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+In `src/environments/environment.ts`, set your API base URL:
+
+```ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000', // Nest backend URL
+};
+```
+
+### 4. Start development server
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Navigate to `http://localhost:4200/` in your browser.
 
-## Code scaffolding
+---
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🗝️ Key Decisions and Trade-offs
 
-```bash
-ng generate component component-name
+* **Angular over React/Vue**
+  Chosen for its opinionated structure, CLI tooling, and built-in DI.
+  *Trade-off*: Steeper learning curve compared to lighter frameworks.
+
+* **Vanilla CSS**
+  Provides full control over styles with minimal overhead.
+  *Trade-off*: No prebuilt utility classes or components; more manual styling.
+
+* **Signals for State Management**
+  Used for local and shared state without introducing extra libraries.
+  *Trade-off*: May require hybrid use with RxJS for complex async flows.
+
+---
+
+## 🚧 Known Limitations / Pending Features
+
+* Public goals page.
+* Pagination, filtering, and sorting in goal lists.
+* Mobile responsiveness fine-tuning.
+* Unit and integration tests.
+* Dark mode toggle.
+
+---
+
+## 📂 Project Structure
+
+```plaintext
+src/
+ ├── app/
+ │   ├── core/         # Services, interceptors, guards
+ │   ├── features/     # Feature modules (goals, auth, etc.)
+ │   ├── shared/       # Shared components, directives, pipes
+ │   ├── app.routes.ts # App routing configuration
+ │   └── app.component.*
+ ├── assets/           # Static assets
+ ├── styles.css        # Global styles
+ └── environments/     # Environment configs
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
