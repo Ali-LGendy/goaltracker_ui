@@ -1,97 +1,411 @@
-<h2 class="page-title">Goals</h2>
-
-<form class="goal-form card" [formGroup]="goalForm" (ngSubmit)="createGoal()">
-  <div class="row">
-    <input class="input" formControlName="title" placeholder="Goal title" required />
-    <input class="input" formControlName="description" placeholder="Description (optional)" />
-    <select class="input" formControlName="parentId" title="Parent goal">
-      <option [ngValue]="null">No Parent (Top level)</option>
-      @for (g of getAllGoalsFlat(goals); track g.id) {
-        <option [ngValue]="g.id">{{ g.title }}</option>
-      }
-    </select>
+<div class="goals-container">
+  <div class="page-header">
+    <h2 class="page-title">
+      <span class="icon">🎯</span>
+      My Goals
+    </h2>
+    <button class="btn btn-primary" (click)="toggleCreateForm()" [class.active]="showCreateForm">
+      <span class="icon">➕</span>
+      New Goal
+    </button>
   </div>
-  <div class="row right">
-    <button class="btn primary" type="submit" [disabled]="creating">+ Add Goal</button>
-  </div>
-</form>
 
-@if (loading) {
-  <div class="loading">Loading goals…</div>
-} @else {
-  <ol class="tree">
-    @for (goal of goals; track goal.id) {
-      <li class="node">
-        @if (editingGoalId !== goal.id) {
-          <div class="node-header">
-            <div class="node-title">
-              <span class="dot"></span>
-              <strong>{{ goal.title }}</strong>
-              @if (goal.description) { <span class="muted">— {{ goal.description }}</span> }
+  <!-- Create Goal Form -->
+  @if (showCreateForm) {
+    <div class="create-form-container">
+      <form class="goal-form card" [formGroup]="goalForm" (ngSubmit)="createGoal()">
+        <div class="form-header">
+          <h3>Create New Goal</h3>
+          <button type="button" class="btn-close" (click)="toggleCreateForm()">✕</button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="title">Title *</label>
+            <input
+              id="title"
+              class="input"
+              formControlName="title"
+              placeholder="Enter goal title"
+              [class.error]="goalForm.get('title')?.invalid && goalForm.get('title')?.touched"
+            />
+            @if (goalForm.get('title')?.invalid && goalForm.get('title')?.touched) {
+              <span class="error-text">Title is required (max 100 characters)</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              class="input textarea"
+              formControlName="description"
+              placeholder="Describe your goal (optional)"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="deadline">Deadline</label>
+              <input
+                id="deadline"
+                type="date"
+                class="input"
+                formControlName="deadline"
+              />
             </div>
-            <div class="actions">
-              <button class="btn" (click)="startEdit(goal)">✏ Edit</button>
-              <button class="btn danger" (click)="deleteGoal(goal.id)">🗑 Delete</button>
+
+            <div class="form-group">
+              <label for="parentId">Parent Goal</label>
+              <select id="parentId" class="input" formControlName="parentId">
+                <option [ngValue]="null">Root Level Goal</option>
+                @for (goal of getAvailableParents(goals); track goal.id) {
+                  <option [ngValue]="goal.id">{{ goal.title }}</option>
+                }
+              </select>
             </div>
           </div>
-        } @else {
-          <form class="edit card" [formGroup]="editForm" (ngSubmit)="saveEdit(goal.id)">
-            <input class="input" formControlName="title" placeholder="Title" />
-            <input class="input" formControlName="description" placeholder="Description" />
-            <div class="row right gap">
-              <button class="btn primary" type="submit">💾 Save</button>
-              <button class="btn" type="button" (click)="cancelEdit()">Cancel</button>
-            </div>
-          </form>
-        }
 
-        @if (goal.children?.length) {
-          <ol>
-            @for (child of goal.children; track child.id) {
-              <li class="node">
-                <!-- recursion renders unlimited levels -->
-                <ng-container *ngTemplateOutlet="nodeTpl; context: {$implicit: child}"></ng-container>
-              </li>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" formControlName="isPublic" />
+              <span class="checkmark"></span>
+              Make this goal public
+            </label>
+            <small class="help-text">Public goals can be viewed by anyone with the link</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" style="background-color: red;" (click)="toggleCreateForm()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background-color: green;" [disabled]="creating || goalForm.invalid">
+            @if (creating) {
+              <span class="spinner"></span>
+              Creating...
+            } @else {
+              <span class="icon">✅</span>
+              Create Goal
             }
-          </ol>
-        }
-      </li>
-    }
-  </ol>
-
-  <!-- Recursive node template -->
-  <ng-template #nodeTpl let-item>
-    @if (editingGoalId !== item.id) {
-      <div class="node-header">
-        <div class="node-title">
-          <span class="dot"></span>
-          <strong>{{ item.title }}</strong>
-          @if (item.description) { <span class="muted">— {{ item.description }}</span> }
-        </div>
-        <div class="actions">
-          <button class="btn" (click)="startEdit(item)">✏ Edit</button>
-          <button class="btn danger" (click)="deleteGoal(item.id)">🗑 Delete</button>
-        </div>
-      </div>
-    } @else {
-      <form class="edit card" [formGroup]="editForm" (ngSubmit)="saveEdit(item.id)">
-        <input class="input" formControlName="title" placeholder="Title" />
-        <input class="input" formControlName="description" placeholder="Description" />
-        <div class="row right gap">
-          <button class="btn primary" type="submit">💾 Save</button>
-          <button class="btn" type="button" (click)="cancelEdit()">Cancel</button>
+          </button>
         </div>
       </form>
-    }
+    </div>
+  }
 
-    @if (item.children?.length) {
-      <ol>
-        @for (c of item.children; track c.id) {
-          <li class="node">
-            <ng-container *ngTemplateOutlet="nodeTpl; context: {$implicit: c}"></ng-container>
-          </li>
+  <!-- Goals List -->
+  @if (loading) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading your goals...</p>
+    </div>
+  } @else if (goals.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">🎯</div>
+      <h3>No goals yet</h3>
+      <p>Start by creating your first goal to track your progress</p>
+      <button class="btn btn-primary" (click)="toggleCreateForm()">
+        <span class="icon">➕</span>
+        Create First Goal
+      </button>
+    </div>
+  } @else {
+    <div class="goals-list">
+      <div
+        cdkDropList
+        [cdkDropListData]="goals"
+        (cdkDropListDropped)="onDrop($event, null)"
+        class="drop-list"
+      >
+        @for (goal of goals; track goal.id) {
+          <div class="goal-item root-goal" cdkDrag>
+            <div class="drag-handle" cdkDragHandle>
+              <span class="drag-icon">⋮⋮</span>
+            </div>
+
+            @if (editingGoalId !== goal.id) {
+              <div class="goal-content">
+                <div class="goal-header">
+                  <div class="goal-info">
+                    <h4 class="goal-title">{{ goal.title }}</h4>
+                    @if (goal.description) {
+                      <p class="goal-description">{{ goal.description }}</p>
+                    }
+
+                    <div class="goal-meta">
+                      @if (goal.deadline) {
+                        <span class="deadline" [class.overdue]="isOverdue(goal.deadline)">
+                          <span class="icon">📅</span>
+                          {{ formatDate(goal.deadline) }}
+                          @if (getDaysUntilDeadline(goal.deadline) !== null) {
+                            <small>
+                              @if (getDaysUntilDeadline(goal.deadline)! < 0) {
+                                ({{ getAbsoluteDaysUntilDeadline(goal.deadline) }} days overdue)
+                              } @else if (getDaysUntilDeadline(goal.deadline) === 0) {
+                                (Due today)
+                              } @else {
+                                ({{ getDaysUntilDeadline(goal.deadline) }} days left)
+                              }
+                            </small>
+                          }
+                        </span>
+                      }
+
+                      @if (goal.isPublic) {
+                        <span class="public-badge" (click)="copyPublicLink(goal)">
+                          <span class="icon">🌐</span>
+                          Public
+                        </span>
+                      }
+
+                      <span class="goal-level">Root</span>
+                    </div>
+                  </div>
+
+                  <div class="goal-actions">
+                    <button class="btn btn-icon" (click)="togglePublic(goal)" [title]="goal.isPublic ? 'Make Private' : 'Make Public'">
+                      @if (goal.isPublic) {
+                        🔓
+                      } @else {
+                        🔒
+                      }
+                    </button>
+                    <button class="btn btn-icon" (click)="startEdit(goal)" title="Edit Goal">
+                      ✏️
+                    </button>
+                    <button class="btn btn-icon btn-danger" (click)="deleteGoal(goal.id)" title="Delete Goal">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            } @else {
+              <!-- Edit Form -->
+              <form class="edit-form" [formGroup]="editForm" (ngSubmit)="saveEdit(goal.id)">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <input
+                      class="input"
+                      formControlName="title"
+                      placeholder="Goal title"
+                      [class.error]="editForm.get('title')?.invalid && editForm.get('title')?.touched"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <textarea
+                      class="input textarea"
+                      formControlName="description"
+                      placeholder="Description"
+                      rows="2"
+                    ></textarea>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <input
+                        type="date"
+                        class="input"
+                        formControlName="deadline"
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <select class="input" formControlName="parentId">
+                        <option [ngValue]="null">Root Level Goal</option>
+                        @for (parentGoal of getAvailableParents(goals, goal.id); track parentGoal.id) {
+                          <option [ngValue]="parentGoal.id">{{ parentGoal.title }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" formControlName="isPublic" />
+                      <span class="checkmark"></span>
+                      Make this goal public
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn btn-secondary" style="background-color: red;" (click)="cancelEdit()">Cancel</button>
+                  <button type="submit" class="btn btn-primary" style="background-color: blue;" [disabled]="editForm.invalid">
+                    <span class="icon">💾</span>
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            }
+
+            <!-- Children Goals -->
+            @if (goal.children && goal.children.length > 0) {
+              <div class="children-container">
+                <div
+                  cdkDropList
+                  [cdkDropListData]="goal.children"
+                  (cdkDropListDropped)="onDrop($event, goal.id)"
+                  class="drop-list children-list"
+                >
+                  @for (child of goal.children; track child.id) {
+                    <div class="goal-item child-goal" cdkDrag>
+                      <div class="drag-handle" cdkDragHandle>
+                        <span class="drag-icon">⋮⋮</span>
+                      </div>
+
+                      @if (editingGoalId !== child.id) {
+                        <div class="goal-content">
+                          <div class="goal-header">
+                            <div class="goal-info">
+                              <h5 class="goal-title">{{ child.title }}</h5>
+                              @if (child.description) {
+                                <p class="goal-description">{{ child.description }}</p>
+                              }
+
+                              <div class="goal-meta">
+                                @if (child.deadline) {
+                                  <span class="deadline" [class.overdue]="isOverdue(child.deadline)">
+                                    <span class="icon">📅</span>
+                                    {{ formatDate(child.deadline) }}
+                                  </span>
+                                }
+
+                                @if (child.isPublic) {
+                                  <span class="public-badge" (click)="copyPublicLink(child)">
+                                    <span class="icon">🌐</span>
+                                    Public
+                                  </span>
+                                }
+
+                                <span class="goal-level">Level 1</span>
+                              </div>
+                            </div>
+
+                            <div class="goal-actions">
+                              <button class="btn btn-icon" (click)="togglePublic(child)">
+                                @if (child.isPublic) {
+                                  🔓
+                                } @else {
+                                  🔒
+                                }
+                              </button>
+                              <button class="btn btn-icon" (click)="startEdit(child)">✏️</button>
+                              <button class="btn btn-icon btn-danger" (click)="deleteGoal(child.id)">🗑️</button>
+                            </div>
+                          </div>
+                        </div>
+                      } @else {
+                        <!-- Child Edit Form - Same as parent but smaller -->
+                        <form class="edit-form child-edit" [formGroup]="editForm" (ngSubmit)="saveEdit(child.id)">
+                          <div class="form-grid">
+                            <input class="input" formControlName="title" placeholder="Goal title" />
+                            <textarea class="input textarea" formControlName="description" placeholder="Description" rows="2"></textarea>
+
+                            <div class="form-row">
+                              <input type="date" class="input" formControlName="deadline" />
+                              <select class="input" formControlName="parentId">
+                                <option [ngValue]="null">Root Level Goal</option>
+                                @for (parentGoal of getAvailableParents(goals, child.id); track parentGoal.id) {
+                                  <option [ngValue]="parentGoal.id">{{ parentGoal.title }}</option>
+                                }
+                              </select>
+                            </div>
+
+                            <label class="checkbox-label">
+                              <input type="checkbox" formControlName="isPublic" />
+                              <span class="checkmark"></span>
+                              Public
+                            </label>
+                          </div>
+
+                          <div class="form-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
+                            <button type="submit" class="btn btn-primary btn-sm" [disabled]="editForm.invalid">
+                              <span class="icon">💾</span>
+                              Save
+                            </button>
+                          </div>
+                        </form>
+                      }
+
+                      <!-- Grandchildren (Level 2) -->
+                      @if (child.children && child.children.length > 0) {
+                        <div class="grandchildren-container">
+                          <div
+                            cdkDropList
+                            [cdkDropListData]="child.children"
+                            (cdkDropListDropped)="onDrop($event, child.id)"
+                            class="drop-list grandchildren-list"
+                          >
+                            @for (grandchild of child.children; track grandchild.id) {
+                              <div class="goal-item grandchild-goal" cdkDrag>
+                                <div class="drag-handle" cdkDragHandle>
+                                  <span class="drag-icon">⋮⋮</span>
+                                </div>
+
+                                @if (editingGoalId !== grandchild.id) {
+                                  <div class="goal-content">
+                                    <div class="goal-header">
+                                      <div class="goal-info">
+                                        <h6 class="goal-title">{{ grandchild.title }}</h6>
+                                        @if (grandchild.description) {
+                                          <p class="goal-description">{{ grandchild.description }}</p>
+                                        }
+
+                                        <div class="goal-meta">
+                                          @if (grandchild.deadline) {
+                                            <span class="deadline" [class.overdue]="isOverdue(grandchild.deadline)">
+                                              📅 {{ formatDate(grandchild.deadline) }}
+                                            </span>
+                                          }
+
+                                          @if (grandchild.isPublic) {
+                                            <span class="public-badge" (click)="copyPublicLink(grandchild)">🌐</span>
+                                          }
+
+                                          <span class="goal-level">Level 2</span>
+                                        </div>
+                                      </div>
+
+                                      <div class="goal-actions">
+                                        <button class="btn btn-icon btn-sm" (click)="togglePublic(grandchild)">
+                                          @if (grandchild.isPublic) { 🔓 } @else { 🔒 }
+                                        </button>
+                                        <button class="btn btn-icon btn-sm" (click)="startEdit(grandchild)">✏️</button>
+                                        <button class="btn btn-icon btn-danger btn-sm" (click)="deleteGoal(grandchild.id)">🗑️</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                } @else {
+                                  <!-- Grandchild Edit Form -->
+                                  <form class="edit-form grandchild-edit" [formGroup]="editForm" (ngSubmit)="saveEdit(grandchild.id)">
+                                    <input class="input" formControlName="title" placeholder="Goal title" />
+                                    <textarea class="input textarea" formControlName="description" placeholder="Description" rows="1"></textarea>
+                                    <input type="date" class="input" formControlName="deadline" />
+
+                                    <div class="form-actions">
+                                      <button type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
+                                      <button type="submit" class="btn btn-primary btn-sm" [disabled]="editForm.invalid">
+                                        <span class="icon">💾</span>
+                                        Save
+                                      </button>
+                                    </div>
+                                  </form>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
         }
-      </ol>
-    }
-  </ng-template>
-}
+      </div>
+    </div>
+  }
+</div>
